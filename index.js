@@ -6,8 +6,6 @@ var http = require('http'),
     cls = require('./lib/cls'),
     sample = require('./lib/sample');
 
-require('webkit-devtools-agent');
-
 var app = express();
 
 // Set up the local storage context
