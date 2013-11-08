@@ -1,11 +1,12 @@
 'use strict';
 
-
 var http = require('http'),
     assert = require('assert'),
     express = require('express'),
     cls = require('./lib/cls'),
     sample = require('./lib/sample');
+
+require('webkit-devtools-agent');
 
 var app = express();
 
