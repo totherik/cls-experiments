@@ -1,0 +1,16 @@
+{
+  "name": "cls",
+  "version": "0.0.0",
+  "description": "ERROR: No README.md file found!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "",
+  "author": "Erik Toth",
+  "license": "BSD",
+  "dependencies": {
+    "continuation-local-storage": "~2.5.2",
+    "express": "~3.4.4"
+  }
+}
