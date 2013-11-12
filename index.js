@@ -13,21 +13,26 @@ app.use(cls.middleware());
 
 // Faux `user` middleware
 app.use(function (req, res, next) {
-    var user = {
+    var context, user;
+
+    user = {
         first_name: 'Call',
         middle_name: 'me',
         last_name: 'maybe',
         create_ts: Date.now()
     };
 
-    req.setLocal('user', user);
+    context = req.getContext();
+    context.set('user', user);
     next();
 });
 
-app.get('/', function (req, res) {
-    var userA, userB;
 
-    userA = req.getLocal('user');
+app.get('/', function (req, res) {
+    var context, userA, userB;
+
+    context = req.getContext();
+    userA = context.get('user');
     userB = sample.doSomethingSync();
 
     sample.doSomething(function (err, userC) {
@@ -42,4 +47,7 @@ app.get('/', function (req, res) {
     });
 });
 
-http.createServer(app).listen(8000);
+
+http.createServer(app).listen(8000, function () {
+    assert.ok(!cls.getRequestContext(), 'Request context defined outside request.');
+});
