@@ -1,53 +1,67 @@
 'use strict';
 
-var http = require('http'),
-    assert = require('assert'),
-    express = require('express'),
-    cls = require('./lib/cls'),
-    sample = require('./lib/sample');
-
-var app = express();
-
-// Set up the local storage context
-app.use(cls.middleware());
-
-// Faux `user` middleware
-app.use(function (req, res, next) {
-    var context, user;
-
-    user = {
-        first_name: 'Call',
-        middle_name: 'me',
-        last_name: 'maybe',
-        create_ts: Date.now()
-    };
-
-    context = req.getContext();
-    context.set('user', user);
-    next();
-});
+var uuid = require('node-uuid'),
+    cls = require('continuation-local-storage');
 
 
-app.get('/', function (req, res) {
-    var context, userA, userB;
+var REQUEST_NS = uuid.v4();
+var rootContext;
 
-    context = req.getContext();
-    userA = context.get('user');
-    userB = sample.doSomethingSync();
 
-    sample.doSomething(function (err, userC) {
-        if (err) {
-            res.send(err);
-            return;
+function create(context) {
+    return Object.freeze({
+        get: function (key) {
+            return context[key];
+        },
+        set: function (key, value) {
+            return context[key] = value;
         }
-
-        assert.strictEqual(userA, userB);
-        assert.strictEqual(userB, userC);
-        res.json(userC);
     });
-});
+}
 
 
-http.createServer(app).listen(8000, function () {
-    assert.ok(!cls.getRequestContext(), 'Request context defined outside request.');
-});
+exports.middleware = function () {
+    var ns;
+
+    // Defer creating the namespace until middleware is invoked.
+    // If we create the namespace upon module (file) initialization
+    // and refer to it from `getRequestContext` fn we would get
+    // a faux "request" context and instead use global shared
+    // state which is bad news.
+    ns = cls.createNamespace(REQUEST_NS);
+    rootContext = ns.active;
+
+    return function (req, res, next) {
+        ns.bindEmitter(req);
+        ns.bindEmitter(res);
+        ns.run(function (context) {
+            context = create(context);
+            req.getContext = function () { return context; };
+            next();
+        });
+    };
+};
+
+
+exports.getRequestContext = function () {
+    var ns, parent, context;
+
+    // Ensure a NS has been configured (e.g. middleware is being used.)
+    ns = cls.getNamespace(REQUEST_NS);
+    if (!ns) {
+        throw new Error('Request context not initialized.');
+    }
+
+    // We know the true request context is a direct descendant
+    // of the root context, so traverse the prototype chain until
+    // we find the first child. Now we know that no contexts have
+    // been created along the way, hijacking request context.
+    parent = ns.active;
+    do {
+        context = parent;
+        parent = Object.getPrototypeOf(context);
+    } while (parent && parent !== rootContext);
+
+    // Return a cls-like API.
+    return parent ? create(context) : undefined;
+};

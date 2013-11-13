@@ -11,7 +11,12 @@
   "license": "BSD",
   "dependencies": {
     "continuation-local-storage": "~2.5.2",
-    "express": "~3.4.4",
     "uuid": "~1.4.1"
+  },
+  "devDependencies": {
+    "express": "~3.4.4",
+    "mocha": "~1.14.0",
+    "chai": "~1.8.1",
+    "supertest": "~0.8.1"
   }
 }
