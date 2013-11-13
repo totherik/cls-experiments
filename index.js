@@ -1,6 +1,7 @@
 'use strict';
 
 var uuid = require('node-uuid'),
+    debug = require('debuglog')('express-cls'),
     cls = require('continuation-local-storage');
 
 
@@ -9,6 +10,7 @@ var rootContext;
 
 
 function create(context) {
+    debug('Created new request context.');
     return Object.freeze({
         get: function (key) {
             return context[key];
@@ -30,6 +32,7 @@ exports.middleware = function () {
     // state which is bad news.
     ns = cls.createNamespace(REQUEST_NS);
     rootContext = ns.active;
+    debug('Created namespace', REQUEST_NS);
 
     return function (req, res, next) {
         ns.bindEmitter(req);
